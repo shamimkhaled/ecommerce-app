@@ -3,6 +3,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+admin.site.site_header = "Store administration"
+admin.site.site_title = "Admin"
+admin.site.index_title = "Manage catalog, orders, and site content"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("config.api_urls")),

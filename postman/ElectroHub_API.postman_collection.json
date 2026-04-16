@@ -1,0 +1,191 @@
+{
+  "info": {
+    "_postman_id": "7d9eaf55-1b35-4a59-a7d0-5d4a5d4fcb21",
+    "name": "ElectroHub API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Comprehensive API collection for ElectroHub ecommerce backend."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "productLookup", "value": "macbook-pro-14" },
+    { "key": "orderNumber", "value": "" },
+    { "key": "couponCode", "value": "SAVE10" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"demo12345\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register/"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access) pm.collectionVariables.set('accessToken', json.access);",
+                  "if (json.refresh) pm.collectionVariables.set('refreshToken', json.refresh);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"demo12345\"\n}" },
+            "url": "{{baseUrl}}/auth/login/"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refresh\": \"{{refreshToken}}\"\n}" },
+            "url": "{{baseUrl}}/auth/token/refresh/"
+          }
+        },
+        {
+          "name": "Me",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/me/" }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        { "name": "Products List", "request": { "method": "GET", "url": "{{baseUrl}}/products/?page_size=12" } },
+        { "name": "Product Detail", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productLookup}}/" } },
+        { "name": "Featured", "request": { "method": "GET", "url": "{{baseUrl}}/products/featured/" } },
+        { "name": "Categories", "request": { "method": "GET", "url": "{{baseUrl}}/products/categories/" } },
+        { "name": "Brands", "request": { "method": "GET", "url": "{{baseUrl}}/brands/" } }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        { "name": "Get Cart", "request": { "method": "GET", "url": "{{baseUrl}}/cart/" } },
+        {
+          "name": "Add To Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 1\n}" },
+            "url": "{{baseUrl}}/cart/"
+          }
+        },
+        {
+          "name": "Set Quantity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}" },
+            "url": "{{baseUrl}}/cart/set-quantity/"
+          }
+        },
+        {
+          "name": "Remove Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": 1\n}" },
+            "url": "{{baseUrl}}/cart/remove/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Coupon Preview",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coupon_code\": \"{{couponCode}}\",\n  \"shipping\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"address_line1\": \"123 Main St\",\n    \"city\": \"Dhaka\",\n    \"postal_code\": \"1207\",\n    \"country\": \"BD\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/orders/coupon-preview/"
+          }
+        },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('orderNumber', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"address_line1\": \"123 Main St\",\n    \"city\": \"Dhaka\",\n    \"postal_code\": \"1207\",\n    \"country\": \"BD\"\n  },\n  \"payment_method\": \"cod\",\n  \"coupon_code\": \"{{couponCode}}\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/checkout/"
+          }
+        },
+        { "name": "Order List", "request": { "method": "GET", "url": "{{baseUrl}}/orders/" } },
+        { "name": "Order Detail", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderNumber}}/" } },
+        { "name": "Track Order", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderNumber}}/track/" } }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List Reviews",
+          "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productLookup}}/reviews/" }
+        },
+        {
+          "name": "Review Eligibility",
+          "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productLookup}}/reviews/eligibility/" }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent product and fast delivery.\"\n}" },
+            "url": "{{baseUrl}}/products/{{productLookup}}/reviews/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Site & CMS",
+      "item": [
+        { "name": "Site Settings", "request": { "method": "GET", "url": "{{baseUrl}}/site/settings/" } },
+        { "name": "CMS Pages", "request": { "method": "GET", "url": "{{baseUrl}}/pages/" } },
+        { "name": "CMS Page Detail", "request": { "method": "GET", "url": "{{baseUrl}}/pages/about/" } }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Product } from '../types';
 import { productService } from '../services/api/productService';
 import { useStore } from '../context/StoreContext';
+import { formatPrice } from '../utils';
 
 export const Compare = () => {
   const [params] = useSearchParams();
@@ -29,7 +30,15 @@ export const Compare = () => {
             <th className="p-3 border-b">Field</th>
             {rows.map((p) => (
               <th key={p.id} className="p-3 border-b">
-                <Link to={`/product/${p.id}`} className="hover:underline">{p.name}</Link>
+                <Link to={`/product/${p.id}`} className="group block">
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-28 h-28 object-cover rounded-xl mb-3 border border-slate-200 dark:border-slate-700"
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="hover:underline group-hover:underline">{p.name}</span>
+                </Link>
               </th>
             ))}
           </tr>
@@ -37,7 +46,7 @@ export const Compare = () => {
         <tbody>
           <tr><td className="p-3 border-b font-semibold">Brand</td>{rows.map((p) => <td key={`${p.id}-b`} className="p-3 border-b">{p.brand}</td>)}</tr>
           <tr><td className="p-3 border-b font-semibold">Category</td>{rows.map((p) => <td key={`${p.id}-c`} className="p-3 border-b">{p.category}</td>)}</tr>
-          <tr><td className="p-3 border-b font-semibold">Price</td>{rows.map((p) => <td key={`${p.id}-p`} className="p-3 border-b">${p.price}</td>)}</tr>
+          <tr><td className="p-3 border-b font-semibold">Price</td>{rows.map((p) => <td key={`${p.id}-p`} className="p-3 border-b">{formatPrice(p.price)}</td>)}</tr>
           <tr><td className="p-3 border-b font-semibold">Rating</td>{rows.map((p) => <td key={`${p.id}-r`} className="p-3 border-b">{p.rating}</td>)}</tr>
           <tr><td className="p-3 border-b font-semibold">Stock</td>{rows.map((p) => <td key={`${p.id}-s`} className="p-3 border-b">{p.stock}</td>)}</tr>
           <tr>

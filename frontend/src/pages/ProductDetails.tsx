@@ -30,6 +30,15 @@ export const ProductDetails = () => {
   const [myRating, setMyRating] = useState(5);
   const [myComment, setMyComment] = useState('');
   const [reviewEligibility, setReviewEligibility] = useState<{ can_review: boolean; delivered: boolean; already_reviewed: boolean } | null>(null);
+  const [allowImageZoom, setAllowImageZoom] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const apply = () => setAllowImageZoom(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,11 +97,14 @@ export const ProductDetails = () => {
   }, [searchParams]);
 
   const galleryImages = product
-    ? [
-        product.image,
-        ...(product.images || []).filter((u) => u && u !== product.image),
-        ...[1, 2, 3, 4].map((i) => `https://picsum.photos/seed/${product.id}${i}/800/800`),
-      ].filter(Boolean)
+    ? Array.from(
+        new Set(
+          [
+            product.image,
+            ...(product.images || []).filter((u) => u && u !== product.image),
+          ].filter(Boolean) as string[]
+        )
+      )
     : [];
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -172,9 +184,9 @@ export const ProductDetails = () => {
   }
 
   return (
-    <div className="container-custom py-12">
+    <div className="container-custom px-4 py-6 sm:px-6 sm:py-10 md:py-12">
       {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8">
+      <div className="mb-6 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:mb-8">
         <Link to="/" className="hover:text-slate-900 dark:hover:text-slate-50 transition-colors">Home</Link>
         <ChevronRight className="w-3 h-3" />
         <Link to="/products" className="hover:text-slate-900 dark:hover:text-slate-50 transition-colors">Products</Link>
@@ -182,49 +194,57 @@ export const ProductDetails = () => {
         <span className="text-slate-900 dark:text-slate-50 truncate">{product?.name}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20">
+      <div className="mb-12 grid grid-cols-1 gap-10 lg:mb-20 lg:grid-cols-2 lg:gap-12 xl:gap-16">
         {/* Image Gallery */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="space-y-4 sm:space-y-6"
         >
-          <div 
-            className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 cursor-zoom-in group"
-            onMouseEnter={() => setIsZoomed(true)}
+          <div
+            className={cn(
+              'relative aspect-square overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900',
+              allowImageZoom && 'cursor-zoom-in'
+            )}
+            onMouseEnter={() => allowImageZoom && setIsZoomed(true)}
             onMouseLeave={() => setIsZoomed(false)}
-            onMouseMove={handleMouseMove}
+            onMouseMove={allowImageZoom ? handleMouseMove : undefined}
           >
-            <img 
-              src={activeImage} 
-              alt={product?.name} 
+            <img
+              src={activeImage}
+              alt={product?.name}
               className={cn(
-                "w-full h-full object-cover transition-transform duration-200",
-                isZoomed ? "scale-[2.5]" : "scale-100"
+                'h-full w-full object-cover transition-transform duration-200',
+                allowImageZoom && isZoomed ? 'scale-[2.5]' : 'scale-100'
               )}
-              style={isZoomed ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : {}}
+              style={allowImageZoom && isZoomed ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : {}}
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="grid grid-cols-5 gap-4">
-            {galleryImages.slice(0, 5).map((img, i) => (
-              <button 
-                key={i} 
-                onClick={() => setActiveImage(img)}
-                className={cn(
-                  "aspect-square rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 border-2 transition-all",
-                  activeImage === img ? "border-brand-600 shadow-lg shadow-brand-600/20" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-                )}
-              >
-                <img 
-                  src={img} 
-                  alt={`${product?.name} ${i}`} 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </button>
-            ))}
-          </div>
+          {galleryImages.length > 1 && (
+            <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+              {galleryImages.map((img, i) => (
+                <button
+                  type="button"
+                  key={`${img}-${i}`}
+                  onClick={() => setActiveImage(img)}
+                  className={cn(
+                    'h-16 w-16 shrink-0 snap-start overflow-hidden rounded-xl border-2 bg-slate-50 transition-all touch-manipulation dark:bg-slate-900 sm:h-20 sm:w-20 md:rounded-2xl',
+                    activeImage === img
+                      ? 'border-brand-600 shadow-lg shadow-brand-600/20'
+                      : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+                  )}
+                >
+                  <img
+                    src={img}
+                    alt={`${product?.name} ${i + 1}`}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* Product Info */}
@@ -234,52 +254,69 @@ export const ProductDetails = () => {
           transition={{ delay: 0.2 }}
           className="flex flex-col"
         >
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {product?.brand}
-            </span>
-            <div className="flex items-center gap-2">
-              <button onClick={handleShare} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                <Share2 className="w-4 h-4" />
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{product?.brand}</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 touch-manipulation"
+              >
+                <Share2 className="h-4 w-4" />
               </button>
-              <button 
-                onClick={() => product && toggleWishlist(product)}
+              <button
+                type="button"
+                onClick={() => product && void toggleWishlist(product)}
                 className={cn(
-                  "p-2 rounded-full transition-colors",
-                  isWishlisted ? "text-red-500" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors touch-manipulation',
+                  isWishlisted ? 'text-red-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                 )}
               >
-                <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
+                <Heart className={cn('h-4 w-4', isWishlisted && 'fill-current')} />
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => product && toggleCompare(product)}
                 className={cn(
-                  "p-2 rounded-full transition-colors",
-                  compared ? "text-indigo-600" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors touch-manipulation',
+                  compared ? 'text-indigo-600' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                 )}
               >
-                <Scale className={cn("w-4 h-4", compared && "fill-current")} />
+                <Scale className={cn('h-4 w-4', compared && 'fill-current')} />
               </button>
             </div>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-tight">{product?.name}</h1>
-          
-          <div className="flex items-center gap-6 mb-8">
+          <h1 className="mb-5 text-3xl font-bold leading-tight tracking-tight sm:mb-6 sm:text-4xl md:text-5xl">{product?.name}</h1>
+
+          <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 sm:mb-8 sm:gap-x-6">
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className={cn("w-4 h-4", s <= Math.floor(product?.rating || 0) ? "fill-amber-400 text-amber-400" : "text-slate-200 dark:text-slate-800")} />
+                <Star
+                  key={s}
+                  className={cn(
+                    'h-4 w-4',
+                    s <= Math.floor(product?.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-800'
+                  )}
+                />
               ))}
-              <span className="text-sm font-bold ml-2">{product?.rating}</span>
+              <span className="ml-2 text-sm font-bold">{product?.rating}</span>
             </div>
-            <span className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{product?.reviewsCount} reviews</span>
-            <span className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
-            <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">In Stock</span>
+            <span className="hidden h-4 w-px bg-slate-200 sm:block dark:bg-slate-800" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{product?.reviewsCount} reviews</span>
+            <span className="hidden h-4 w-px bg-slate-200 sm:block dark:bg-slate-800" />
+            <span
+              className={cn(
+                'text-xs font-bold uppercase tracking-widest',
+                (product?.stock ?? 0) > 0 ? 'text-emerald-500' : 'text-amber-600'
+              )}
+            >
+              {(product?.stock ?? 0) > 0 ? `In stock (${product?.stock})` : 'Out of stock'}
+            </span>
           </div>
 
-          <div className="flex items-center gap-4 mb-10">
-            <span className="text-5xl font-extrabold tracking-tight">{formatPrice(product?.price || 0)}</span>
+          <div className="mb-8 flex flex-wrap items-center gap-3 sm:mb-10 sm:gap-4">
+            <span className="text-4xl font-extrabold tracking-tight sm:text-5xl">{formatPrice(product?.price || 0)}</span>
             {product?.discount && (
               <div className="flex items-center gap-3">
                 <span className="text-xl text-slate-300 dark:text-slate-700 line-through font-medium">
@@ -292,35 +329,38 @@ export const ProductDetails = () => {
             )}
           </div>
 
-          <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed text-lg">
-            {product?.description}
-          </p>
+          <p className="mb-8 text-base leading-relaxed text-slate-500 dark:text-slate-400 sm:mb-10 sm:text-lg">{product?.description}</p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
-            <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded-2xl p-1 w-full sm:w-auto">
-              <button 
-                onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-14 h-14 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          <div className="mb-10 flex flex-col gap-3 sm:mb-12 sm:flex-row sm:items-stretch sm:gap-4">
+            <div className="flex w-full items-center justify-center rounded-2xl border border-slate-200 p-1 dark:border-slate-800 sm:w-auto sm:justify-start">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 touch-manipulation sm:h-14 sm:w-14"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="h-4 w-4" />
               </button>
-              <span className="w-14 text-center font-bold text-base">{quantity}</span>
-              <button 
-                onClick={() => setQuantity(q => q + 1)}
-                className="w-14 h-14 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              <span className="min-w-[3rem] text-center text-base font-bold">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                disabled={(product?.stock ?? 0) > 0 && quantity >= (product?.stock ?? 0)}
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800 touch-manipulation sm:h-14 sm:w-14"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4" />
               </button>
             </div>
-            <button 
-              onClick={handleAddToCart}
-              className="flex-1 btn-primary py-5 text-base w-full"
+            <button
+              type="button"
+              onClick={() => void handleAddToCart()}
+              disabled={(product?.stock ?? 0) < 1}
+              className="btn-primary inline-flex min-h-[3.25rem] w-full flex-1 items-center justify-center gap-2 py-4 text-base touch-manipulation disabled:cursor-not-allowed disabled:opacity-50 sm:py-5"
             >
-              <ShoppingCart className="w-5 h-5" /> Add to Cart
+              <ShoppingCart className="h-5 w-5 shrink-0" /> Add to Cart
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 p-8 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border border-slate-100 dark:border-slate-800/50">
+          <div className="grid grid-cols-1 gap-6 rounded-[2rem] border border-slate-100 bg-slate-50 p-6 dark:border-slate-800/50 dark:bg-slate-900/50 sm:grid-cols-3 sm:gap-8 sm:p-8">
             <div className="flex flex-col gap-3">
               <Truck className="w-6 h-6 text-brand-600" />
               <div>
@@ -347,15 +387,16 @@ export const ProductDetails = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-100 dark:border-slate-800 mb-12">
-        <div className="flex gap-12 overflow-x-auto no-scrollbar">
+      <div className="mb-8 border-b border-slate-100 dark:border-slate-800 sm:mb-12">
+        <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-1 sm:gap-8 md:gap-12">
           {['description', 'specs', 'reviews', 'shipping'].map((tab) => (
             <button
+              type="button"
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "pb-6 text-[10px] font-bold uppercase tracking-[0.2em] transition-all relative whitespace-nowrap",
-                activeTab === tab ? "text-brand-600" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                'relative touch-manipulation whitespace-nowrap pb-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all sm:pb-6',
+                activeTab === tab ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
               )}
             >
               {tab}
@@ -367,7 +408,7 @@ export const ProductDetails = () => {
         </div>
       </div>
 
-      <div className="min-h-[400px]">
+      <div className="min-h-[280px] sm:min-h-[400px]">
         {activeTab === 'description' && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
@@ -375,8 +416,8 @@ export const ProductDetails = () => {
             className="prose dark:prose-invert max-w-none"
           >
             <div className="space-y-8">
-              <div className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/50">
-                <h3 className="text-2xl font-bold mb-6">Product Overview</h3>
+              <div className="rounded-[2rem] border border-slate-100 bg-slate-50 p-6 dark:border-slate-800/50 dark:bg-slate-900/50 sm:rounded-[2.5rem] sm:p-10">
+                <h3 className="mb-4 text-xl font-bold sm:mb-6 sm:text-2xl">Product Overview</h3>
                 <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-lg">
                   {product?.description}
                 </p>
@@ -416,8 +457,9 @@ export const ProductDetails = () => {
                 ].map((item) => (
                   <div key={item.id} className="border-b border-slate-100 dark:border-slate-800">
                     <button
+                      type="button"
                       onClick={() => setOpenAccordion(openAccordion === item.id ? null : item.id)}
-                      className="w-full flex items-center justify-between py-6 text-left"
+                      className="flex w-full touch-manipulation items-center justify-between py-5 text-left sm:py-6"
                     >
                       <span className="text-[10px] font-bold uppercase tracking-widest">{item.title}</span>
                       <ChevronDown className={cn("w-4 h-4 transition-transform", openAccordion === item.id && "rotate-180")} />
@@ -463,9 +505,18 @@ export const ProductDetails = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-12"
           >
-            <div className="flex items-center justify-between">
-              <h3 className="text-3xl font-extrabold tracking-tight">Customer Reviews</h3>
-              <button className="px-8 py-3 border-2 border-slate-200 dark:border-slate-800 rounded-xl font-bold text-[11px] uppercase tracking-widest hover:border-brand-600 hover:text-brand-600 transition-all">Write a Review</button>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Customer Reviews</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('reviews');
+                  window.setTimeout(() => document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }}
+                className="touch-manipulation rounded-xl border-2 border-slate-200 px-6 py-3 text-[11px] font-bold uppercase tracking-widest transition-all hover:border-brand-600 hover:text-brand-600 dark:border-slate-800 sm:px-8"
+              >
+                Write a Review
+              </button>
             </div>
             <div className="grid grid-cols-1 gap-8">
               {reviews.map((r) => (
@@ -491,22 +542,42 @@ export const ProductDetails = () => {
                   </p>
                 </div>
               ))}
-              <div className="pt-4">
+              <div id="review-form" className="scroll-mt-24 pt-4">
                 {reviewEligibility && !reviewEligibility.can_review && (
-                  <p className="text-sm text-slate-500 mb-3">
+                  <p className="mb-3 text-sm text-slate-500">
                     {reviewEligibility.already_reviewed
                       ? 'You already reviewed this product.'
                       : 'You can review only after this product is delivered to you.'}
                   </p>
                 )}
-                <div className="flex items-center gap-3 mb-3">
+                <div className="mb-3 flex flex-wrap items-center gap-3">
                   <span className="text-sm font-semibold">Your rating</span>
-                  <select value={myRating} onChange={(e) => setMyRating(Number(e.target.value))} className="input-modern max-w-[120px] py-2">
-                    {[5,4,3,2,1].map((x) => <option key={x} value={x}>{x}</option>)}
+                  <select
+                    value={myRating}
+                    onChange={(e) => setMyRating(Number(e.target.value))}
+                    className="input-modern max-w-[120px] py-2 touch-manipulation"
+                  >
+                    {[5, 4, 3, 2, 1].map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <textarea value={myComment} onChange={(e) => setMyComment(e.target.value)} className="input-modern mb-3" placeholder="Write your review..." />
-                <button className="btn-primary" disabled={!reviewEligibility?.can_review} onClick={() => void submitReview()}>Submit Review</button>
+                <textarea
+                  value={myComment}
+                  onChange={(e) => setMyComment(e.target.value)}
+                  className="input-modern mb-3 min-h-[100px] w-full"
+                  placeholder="Write your review..."
+                />
+                <button
+                  type="button"
+                  className="btn-primary touch-manipulation disabled:opacity-50"
+                  disabled={!reviewEligibility?.can_review}
+                  onClick={() => void submitReview()}
+                >
+                  Submit Review
+                </button>
               </div>
             </div>
           </motion.div>
@@ -515,9 +586,9 @@ export const ProductDetails = () => {
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <div className="mt-32">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-bold tracking-tight">You May Also Like</h2>
+        <div className="mt-16 sm:mt-24 lg:mt-32">
+          <div className="mb-8 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">You May Also Like</h2>
             <Link to="/products" className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
               Explore More <ArrowRight className="w-3 h-3" />
             </Link>

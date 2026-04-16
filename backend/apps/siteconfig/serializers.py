@@ -6,6 +6,7 @@ from .models import CMSPage, SiteSetting
 class SiteSettingSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
     hero_image_url = serializers.SerializerMethodField()
+    hero_background_image_url = serializers.SerializerMethodField()
     homepage_banner_image_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -15,7 +16,21 @@ class SiteSettingSerializer(serializers.ModelSerializer):
             "logo_url",
             "header_text",
             "footer_text",
+            "hero_badge_text",
+            "hero_title",
+            "hero_title_highlight",
+            "hero_description",
+            "hero_cta_primary_label",
+            "hero_cta_primary_url",
+            "hero_cta_secondary_label",
+            "hero_cta_secondary_url",
             "hero_image_url",
+            "hero_background_image_url",
+            "promo_title",
+            "promo_title_highlight",
+            "promo_description",
+            "promo_cta_label",
+            "promo_cta_url",
             "homepage_banner_image_url",
             "primary_color",
             "secondary_color",
@@ -43,6 +58,9 @@ class SiteSettingSerializer(serializers.ModelSerializer):
 
     def get_hero_image_url(self, obj):
         return self._url(self.context.get("request"), obj.hero_image)
+
+    def get_hero_background_image_url(self, obj):
+        return self._url(self.context.get("request"), obj.hero_background_image)
 
     def get_homepage_banner_image_url(self, obj):
         return self._url(self.context.get("request"), obj.homepage_banner_image)

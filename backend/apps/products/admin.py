@@ -13,6 +13,9 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "image")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "description", "image")}),
+    )
 
 
 @admin.register(Brand)
@@ -31,11 +34,41 @@ class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductImageInline]
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
-        (None, {"fields": ("name", "slug", "description", "category", "brand")}),
-        ("Pricing", {"fields": ("price", "discount", "stock")}),
-        ("Visibility", {"fields": ("is_featured", "is_trending", "is_active")}),
-        ("SEO", {"fields": ("meta_title", "meta_description", "meta_keywords")}),
-        ("Metadata", {"fields": ("specs", "created_at", "updated_at")}),
+        (
+            "Basics",
+            {
+                "description": "Name, URL slug, and catalog relationships.",
+                "fields": ("name", "slug", "description", "category", "brand"),
+            },
+        ),
+        (
+            "Pricing & inventory",
+            {
+                "description": "Price is stored in the site base currency (USD). Discount is a percentage for display.",
+                "fields": ("price", "discount", "stock"),
+            },
+        ),
+        (
+            "Storefront visibility",
+            {
+                "fields": ("is_featured", "is_trending", "is_active"),
+            },
+        ),
+        (
+            "SEO",
+            {
+                "classes": ("collapse",),
+                "fields": ("meta_title", "meta_description", "meta_keywords"),
+            },
+        ),
+        (
+            "Specs (JSON)",
+            {
+                "classes": ("collapse",),
+                "description": "Key/value specs shown on the product page (e.g. {\"RAM\": \"16GB\"}).",
+                "fields": ("specs", "created_at", "updated_at"),
+            },
+        ),
     )
 
 
@@ -50,3 +83,13 @@ class HomepageSectionAdmin(admin.ModelAdmin):
     list_display = ("title", "key", "is_active", "sort_order")
     list_filter = ("is_active",)
     filter_horizontal = ("products",)
+    search_fields = ("title", "key")
+    fieldsets = (
+        (
+            None,
+            {
+                "description": "Curated product lists for the API (`/api/homepage-sections/`). Lower sort_order appears first.",
+                "fields": ("key", "title", "is_active", "sort_order", "products"),
+            },
+        ),
+    )

@@ -11,6 +11,31 @@ class SiteSetting(models.Model):
     header_text = models.CharField(max_length=255, blank=True)
     footer_text = models.TextField(blank=True)
     hero_image = models.ImageField(upload_to="site/hero/", blank=True, null=True)
+    hero_background_image = models.ImageField(
+        upload_to="site/hero_bg/",
+        blank=True,
+        null=True,
+        help_text="Optional full-width hero background (behind text).",
+    )
+    hero_badge_text = models.CharField(max_length=120, blank=True, default="Next Gen Technology")
+    hero_title = models.CharField(max_length=255, blank=True, default="The Future")
+    hero_title_highlight = models.CharField(max_length=255, blank=True, default="of Innovation.")
+    hero_description = models.TextField(
+        blank=True,
+        default="Experience the next evolution of gadgets. Precision engineered, beautifully designed, and built for the modern world.",
+    )
+    hero_cta_primary_label = models.CharField(max_length=80, blank=True, default="Shop Collection")
+    hero_cta_primary_url = models.CharField(max_length=255, blank=True, default="/products")
+    hero_cta_secondary_label = models.CharField(max_length=80, blank=True, default="Explore Categories")
+    hero_cta_secondary_url = models.CharField(max_length=255, blank=True, default="/products")
+    promo_title = models.CharField(max_length=255, blank=True, default="Immersive")
+    promo_title_highlight = models.CharField(max_length=255, blank=True, default="Sound Experience.")
+    promo_description = models.TextField(
+        blank=True,
+        default="Get up to 30% off on all Sony and Bose headphones this week. Experience audio like never before.",
+    )
+    promo_cta_label = models.CharField(max_length=120, blank=True, default="Shop Audio Deals")
+    promo_cta_url = models.CharField(max_length=255, blank=True, default="/products?category=Audio")
     homepage_banner_image = models.ImageField(upload_to="site/banner/", blank=True, null=True)
     primary_color = models.CharField(max_length=16, default="#2563eb")
     secondary_color = models.CharField(max_length=16, default="#4f46e5")
@@ -31,6 +56,9 @@ class SiteSetting(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Site Settings"
 
     @classmethod
     def load(cls):

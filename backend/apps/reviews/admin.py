@@ -9,3 +9,11 @@ class ReviewAdmin(admin.ModelAdmin):
     list_filter = ("is_approved", "rating")
     search_fields = ("user__email", "product__name", "comment")
     autocomplete_fields = ("user", "product", "order")
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("user", "product", "order", "rating", "comment", "is_approved"),
+            },
+        ),
+    )
